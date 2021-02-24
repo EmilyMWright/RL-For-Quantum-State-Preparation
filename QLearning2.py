@@ -1,3 +1,17 @@
+
+################################################################################
+# QLearning2.py - Q-learning algorithm for quantum state preparation           #
+#                                                                              #
+# Reinforcement learning algorithm to discover a sequence of discrete controls #
+# to bring one qubit from an initial state toward a desired state.             #
+# The algorithm will maximize fidelity between the final state achieved by     # 
+# the control and the desired state.                                           # 
+#                                                                              #
+# Author: Emily M. Wright                                                      #
+# Date: February 2021                                                          #
+#                                                                              #
+################################################################################
+
 import random
 from qutip import *
 import matplotlib.pyplot as plt
@@ -6,25 +20,83 @@ from cmath import cos,sin,exp
 from math import acos, asin, isclose
 from scipy.linalg import expm
 
+# Pauli matrices
 SIGMA_X = np.matrix([[0,1],[1,0]])
 SIGMA_Z = np.matrix([[1,0],[0,-1]])
 
+################################################################################
+# Function: F                                                                  #
+#                                                                              #
+# Purpose: Calculate fidelity between two quantum states                       #
+#                                                                              #
+# Arguments:                                                                   #
+#   psi      list of two complex numbers    quantum state                      #
+#   psi0     list of two complex numbers    quantum state                      #
+#                                                                              #
+# Returns: fidelity |<psi*|psi0>|^2                                            #
+#                                                                              #
+################################################################################
 def F(psi,psi0):
     a = np.vdot(psi,psi0)
     return float(abs(a)**2)
 
+################################################################################
+# Function: reward                                                             #
+#                                                                              #
+# Purpose: Calculate reward for current state given target state               #
+#                                                                              #
+# Arguments:                                                                   #
+#   state      list of two complex numbers    current quantum state            #
+#   target     list of two complex numbers    target quantum state             #
+#                                                                              #
+# Returns: Reward based on fidelity between states                             #
+#                                                                              #
+################################################################################
+
 def reward(state, target):
+    # fidelity
     f = F(state, target)
     if f < 0.999:
         return 100*f**3
     else:
         return 5000
 
+################################################################################
+# Function: evolve                                                             #
+#                                                                              #
+# Purpose: Evolve a quantum state according to generalized Shrodinger equation #
+#                                                                              #
+# Arguments:                                                                   #
+#   psi0      list of two complex numbers    quantum state                     #
+#   h         int                            control magnetic field            #
+#   dt        float                          time step                         #
+#                                                                              #
+# Returns: New quantum state                                                   #
+#                                                                              #
+################################################################################
 def evolve(psi0,h,dt):
+    # Hamiltonian
     H = -SIGMA_X - h*SIGMA_Z
+    # unitary operator
     U = expm(dt*(-1j)*H)
     return np.dot(U,psi0)
 
+
+################################################################################
+# Function: angles                                                             #
+#                                                                              #
+# Purpose: Converts a state a|0> + b|1> to a pair of angles (theta,phi)        #
+#                                                                              #
+# The conversion arises from the representation                                #
+# cos(theta/2)|0> + e^(i*phi)sin(theta/2)|1>                                   #
+# theta in [0,pi], phi in [0,2pi]                                              #
+#                                                                              #
+# Arguments:                                                                   #
+#   psi      list of two complex numbers    quantum state                      #
+#                                                                              #
+# Returns: Angles theta, phi                                                   #
+#                                                                              #
+################################################################################
 def angles(psi):
     a = complex(psi[0]).real
     theta = 2*acos(a)
@@ -34,34 +106,53 @@ def angles(psi):
         theta = 2*np.pi - theta
     if (theta == 0) | (isclose(theta.real,np.pi)):
         return (theta,0)
-    
     k = sin(theta/2).real
-    
+    # account for rounding errors
     if b/k > 1:
         k = b
     if b/k < -1:
         k = -b
     phi = acos(b/k)
+    # phase
     if c<0:
         phi = 2*np.pi-phi
     return theta.real,phi.real
 
-def nbin(psi):
+################################################################################
+# Function: nbin                                                               #
+#                                                                              #
+# Purpose: Discretizes the state space                                         #
+#                                                                              #
+# Slices state space into intervals of length pi/K for both angles             #
+# Returns indices of Q-table for corresponding state "bin"                     #
+#                                                                              #
+# Arguments:                                                                   #
+#   psi      list of two complex numbers    quantum state                      #
+#   K        int                            slice size                         #
+#                                                                              #
+# Returns: i,j                                                                 #
+#                                                                              #
+################################################################################
+def nbin(psi,K):
     theta, phi = angles(psi)
     if theta > 0:
-        i = np.floor(30*theta/np.pi)
+        i = np.floor(K*theta/np.pi)
     else:
         i = 0
     if phi > 0:
-        j = np.floor(30*phi/np.pi)
+        j = np.floor(K*phi/np.pi)
     else:
         j = 0
     return int(i),int(j)
 
+################################## Q-learning ##################################
+
+################################### Training ###################################
+
 # parameters
 alpha = 0.99; gamma = 0.6; epsilon = 0.9
-iters = 1000; N = 10; T = np.pi; dt = T/N
-h_min = -1; h_max = 1; M = 3
+iters = 10000; N = 10; T = np.pi; dt = T/N
+h_min = -1; h_max = 1; M = 3; K = 30
 
 # initial state and target
 psi0 = np.array([complex(1,0),complex(0,0)])
@@ -73,17 +164,10 @@ actions = np.linspace(h_min,h_max,M)
 # Q-table
 Q = np.zeros(shape=(62,62,len(actions)))
 
-# count iterations
-count = 0
-
 for j in range(iters):
     # initialize
     psi = psi0
-    st,sp = nbin(psi)
-    count = count + 1
-    #print(count)
-    #rewards = [reward(psi,psit)]
-    #visited = [psi]
+    st,sp = nbin(psi,K)
     for i in range(N):
         # choose action
         random.seed()
@@ -108,21 +192,20 @@ for j in range(iters):
 
         prev_sp = sp
         prev_st = st
-        sp, st = nbin(psi)
-        #visited.append(psi)
+        sp, st = nbin(psi,K)
 
         # calculate reward
         r = reward(psi,psit)
-        #rewards.append(r)
 
         # update Q-table
         Q[prev_st,prev_sp,k] = Q[prev_st,prev_sp,k] + alpha*(r + gamma*np.max(Q[st,sp,:]) - Q[prev_st,prev_sp,k])
 
-# test
+#################################### Testing ###################################
+
 controls = []
 visited = [psi0]
 psi = psi0
-st,sp = nbin(psi)
+st,sp = nbin(psi,K)
 for j in range(N):
     # choose action
     random.seed()
@@ -135,31 +218,34 @@ for j in range(N):
     k = int(k)
     h = actions[k]
     
-    # track
+    # track controls
     controls.append(h)
 
     # new state
     psi = evolve(psi,int(h),dt)
+
+    # track states
     visited.append(psi)
         
     # break if reached target state
     if 1-F(psi,psit) < 10**(-3):
         break
 
-print(Q)
+# print(Q)
 print(controls)
-print(visited)
+# print(visited)
 
+################################# Visualization ################################
+
+# Visualize states
 q0 = basis(2,0)
 q1 = basis(2,1)
 
 s = [vis[0]*q0+vis[1]*q1 for vis in visited]
 
-# ##### PLOTTING ######
+###### PLOTTING ######
 fig = plt.figure()
 b = Bloch(fig=fig)
 b.add_states(s)
-#b.add_states(psit)
-#b.add_points([0,0,0])
 b.render(fig=fig)
 plt.show()

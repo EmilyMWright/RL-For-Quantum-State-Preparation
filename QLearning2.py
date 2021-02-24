@@ -44,11 +44,10 @@ def angles(psi):
     phi = acos(b/k)
     if c<0:
         phi = 2*np.pi-phi
-    return (theta.real,phi.real)
+    return theta.real,phi.real
 
 def nbin(psi):
-    theta = angles(psi)[0]
-    phi = angles(psi)[1]
+    theta, phi = angles(psi)
     if theta > 0:
         i = np.floor(30*theta/np.pi)
     else:
@@ -57,11 +56,11 @@ def nbin(psi):
         j = np.floor(30*phi/np.pi)
     else:
         j = 0
-    return int(30*i + j)
+    return int(i),int(j)
 
 # parameters
 alpha = 0.99; gamma = 0.6; epsilon = 0.9
-iters = 10000; N = 10; T = np.pi; dt = T/N
+iters = 1000; N = 10; T = np.pi; dt = T/N
 h_min = -1; h_max = 1; M = 3
 
 # initial state and target
@@ -72,7 +71,7 @@ psit = np.array([complex(0,0),complex(1,0)])
 actions = np.linspace(h_min,h_max,M)
 
 # Q-table
-Q = np.zeros(shape=(900,len(actions)))
+Q = np.zeros(shape=(62,62,len(actions)))
 
 # count iterations
 count = 0
@@ -80,7 +79,7 @@ count = 0
 for j in range(iters):
     # initialize
     psi = psi0
-    state = nbin(psi)
+    st,sp = nbin(psi)
     count = count + 1
     #print(count)
     #rewards = [reward(psi,psit)]
@@ -93,7 +92,7 @@ for j in range(iters):
             k = random.randint(0,M-1)
         # exploit
         else:
-            row = Q[state, :]
+            row = Q[st,sp,:]
             k = np.argwhere(row == max(row))
             if len(k) > 1:
                 k =random.choice(k)
@@ -107,8 +106,9 @@ for j in range(iters):
         if 1-F(psi,psit) < 10**(-3):
             break
 
-        prev_state = state
-        state = nbin(psi)
+        prev_sp = sp
+        prev_st = st
+        sp, st = nbin(psi)
         #visited.append(psi)
 
         # calculate reward
@@ -116,18 +116,18 @@ for j in range(iters):
         #rewards.append(r)
 
         # update Q-table
-        Q[prev_state,k] = Q[prev_state,k] + alpha*(r + gamma*np.max(Q[state,:]) - Q[prev_state,k])
+        Q[prev_st,prev_sp,k] = Q[prev_st,prev_sp,k] + alpha*(r + gamma*np.max(Q[st,sp,:]) - Q[prev_st,prev_sp,k])
 
 # test
 controls = []
 visited = [psi0]
 psi = psi0
-state = nbin(psi)
+st,sp = nbin(psi)
 for j in range(N):
     # choose action
     random.seed()
     # explout
-    row = Q[state, :]
+    row = Q[st,sp, :]
 
     k = np.argwhere(row == max(row))
     if len(k) > 1:
@@ -141,9 +141,6 @@ for j in range(N):
     # new state
     psi = evolve(psi,int(h),dt)
     visited.append(psi)
-
-    # get closest allowed state
-    state = nbin(psi)
         
     # break if reached target state
     if 1-F(psi,psit) < 10**(-3):

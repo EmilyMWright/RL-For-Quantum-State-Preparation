@@ -64,7 +64,8 @@ def reward(state, target):
 ################################################################################
 # Function: evolve                                                             #
 #                                                                              #
-# Purpose: Evolve a quantum state according to generalized Shrodinger equation #
+# Purpose: Evolve a quantum state according to the generalized Shrodinger      #
+#          equation                                                            #
 #                                                                              #
 # Arguments:                                                                   #
 #   psi0      list of two complex numbers    quantum state                     #
@@ -121,7 +122,7 @@ def angles(psi):
 ################################################################################
 # Function: nbin                                                               #
 #                                                                              #
-# Purpose: Discretizes the state space                                         #
+# Purpose: Quantizes the state space                                           #
 #                                                                              #
 # Slices state space into intervals of length pi/K for both angles             #
 # Returns indices of Q-table for corresponding state "bin"                     #
@@ -151,7 +152,7 @@ def nbin(psi,K):
 
 # parameters
 alpha = 0.99; gamma = 0.6; epsilon = 0.9
-iters = 10000; N = 10; T = np.pi; dt = T/N
+iters = 1000; N = 30; T = np.pi; dt = T/N
 h_min = -1; h_max = 1; M = 3; K = 30
 
 # initial state and target

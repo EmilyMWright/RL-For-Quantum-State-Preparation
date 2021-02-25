@@ -52,7 +52,6 @@ def F(psi,psi0):
 # Returns: Reward based on fidelity between states                             #
 #                                                                              #
 ################################################################################
-
 def reward(state, target):
     # fidelity
     f = F(state, target)
@@ -76,8 +75,11 @@ def reward(state, target):
 #                                                                              #
 ################################################################################
 def evolve(psi0,h,dt):
+    # noise
+    sigma = np.random.normal(loc=0.0, scale=0.1, size=None)
+    #sigma = 0
     # Hamiltonian
-    H = -SIGMA_X - h*SIGMA_Z
+    H = -(1+sigma)*SIGMA_X - h*SIGMA_Z
     # unitary operator
     U = expm(dt*(-1j)*H)
     return np.dot(U,psi0)
@@ -151,9 +153,14 @@ def nbin(psi,K):
 ################################### Training ###################################
 
 # parameters
+# alpha - learning rate | gamma - discount factor | epsilon - exploitation probability | 
 alpha = 0.99; gamma = 0.6; epsilon = 0.9
-iters = 1000; N = 30; T = np.pi; dt = T/N
-h_min = -1; h_max = 1; M = 3; K = 30
+# iters - iterations | N - number of controls | T - total time | dt - length of time each control is applied
+iters = 5000; N = 30; T = np.pi; dt = T/N
+# h_min - smallest control | h_max largest control | M = number of control values
+h_min = -1; h_max = 1; M = 3
+# K - length of interval for quantization is pi/K
+K = 30
 
 # initial state and target
 psi0 = np.array([complex(1,0),complex(0,0)])
@@ -210,14 +217,13 @@ st,sp = nbin(psi,K)
 for j in range(N):
     # choose action
     random.seed()
-    # explout
+    
+    # exploit
     row = Q[st,sp, :]
-
     k = np.argwhere(row == max(row))
     if len(k) > 1:
         k =random.choice(k)
-    k = int(k)
-    h = actions[k]
+    h = actions[int(k)]
     
     # track controls
     controls.append(h)

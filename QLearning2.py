@@ -76,14 +76,14 @@ def reward(state, target):
 ################################################################################
 def evolve(psi0,h,dt):
     # noise
-    sigma = np.random.normal(loc=0.0, scale=0.1, size=None)
-    #sigma = 0
+    eta = np.random.normal(loc=0.0, scale=0.05, size=None)
+    s = np.random.choice([-1,1])
     # Hamiltonian
-    H = -(1+sigma)*SIGMA_X - h*SIGMA_Z
+    H = -SIGMA_X - (h + s*eta)*SIGMA_Z
+    # H = -SIGMA_X - h*SIGMA_Z
     # unitary operator
     U = expm(dt*(-1j)*H)
     return np.dot(U,psi0)
-
 
 ################################################################################
 # Function: angles                                                             #
@@ -154,9 +154,9 @@ def nbin(psi,K):
 
 # parameters
 # alpha - learning rate | gamma - discount factor | epsilon - exploitation probability | 
-alpha = 0.99; gamma = 0.6; epsilon = 0.9
+alpha = 0.99; gamma = 0.5; epsilon = 0.9
 # iters - iterations | N - number of controls | T - total time | dt - length of time each control is applied
-iters = 5000; N = 30; T = np.pi; dt = T/N
+iters = 1000; N = 10; T = np.pi; dt = T/N
 # h_min - smallest control | h_max largest control | M = number of control values
 h_min = -1; h_max = 1; M = 3
 # K - length of interval for quantization is pi/K

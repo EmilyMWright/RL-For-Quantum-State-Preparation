@@ -156,7 +156,7 @@ def nbin(psi,K):
 # alpha - learning rate | gamma - discount factor | epsilon - exploitation probability | 
 alpha = 0.99; gamma = 0.5; epsilon = 0.9
 # iters - iterations | N - number of controls | T - total time | dt - length of time each control is applied
-iters = 1000; N = 30; T = np.pi; dt = T/N
+iters = 5000; N = 30; T = np.pi; dt = T/N
 # h_min - smallest control | h_max largest control | M = number of control values
 h_min = -1; h_max = 1; M = 3
 # K - length of interval for quantization is pi/K

@@ -1,6 +1,6 @@
 
 ################################################################################
-# QLearning2.py - Q-learning algorithm for quantum state preparation           #
+# QLearning3.py - Q-learning algorithm for quantum state preparation           #
 #                                                                              #
 # Reinforcement learning algorithm to discover a sequence of discrete controls #
 # to bring one qubit from an initial state toward a desired state.             #
@@ -68,8 +68,8 @@ def reward(state, target):
 #          equation                                                            #
 #                                                                              #
 # Arguments:                                                                   #
-#   psi0      list of two complex numbers    quantum state                     #
-#   h         tuple (hx,hz)                  control magnetic field            #
+#   psi0      list of complex numbers (a,b)  quantum state                     #
+#   h         tuple of ints (hx,hz)          control magnetic field            #
 #   dt        float                          time step                         #
 #                                                                              #
 # Returns: New quantum state                                                   #
@@ -161,11 +161,11 @@ def nbin(psi,K):
 
 # parameters
 # alpha - learning rate | gamma - discount factor | epsilon - exploitation probability | 
-alpha = 0.9; gamma = 0.5; epsilon = 0.9
+alpha = 0.9; gamma = 0.5; epsilon = 0.1
 # iters - iterations | N - number of controls | T - total time | dt - length of time each control is applied
 iters = 10000; N = 30; T = np.pi; dt = T/N
-# h_min - smallest control | h_max largest control | M = number of control values
-h_min = -1; h_max = 1; M = 3
+# h_min - smallest control | h_max - largest control | M - number of control values
+h_min = -1; h_max = 1; M = 2
 # K - length of interval for quantization is pi/K
 K = 30
 
@@ -192,7 +192,7 @@ for j in range(iters):
         # choose action
         random.seed()
         # explore
-        if random.random() > epsilon:
+        if random.random() < epsilon:
             k = random.randint(0,len(actions)-1)
         # exploit
         else:
@@ -221,7 +221,7 @@ for j in range(iters):
         Q[prev_st,prev_sp,k] = Q[prev_st,prev_sp,k] + alpha*(r + gamma*np.max(Q[st,sp,:]) - Q[prev_st,prev_sp,k])
         
         # decease learning rate
-        alpha = 0.09**(0.004*j)
+        alpha = 0.9**(0.004*j)
 
 #################################### Testing ###################################
 
@@ -254,6 +254,7 @@ for j in range(N):
     if 1-F(psi,psit) < 10**(-3):
         break
 
+visited.append(psit)
 # print(Q)
 print(controls)
 # print(visited)

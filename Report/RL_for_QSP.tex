@@ -1,0 +1,34 @@
+\documentclass[11pt,letterpaper,titlepage,english]{article}
+\usepackage{mthereport}
+
+\title{\textbf{Reinforcement Learning for Quantum State Preparation}}
+\author{
+    Emily Wright
+}
+\date{March 2020}
+
+\begin{document}
+    \maketitle
+    
+    \newpage
+
+    \tableofcontents
+    \listoffigures
+    % \listoftables
+
+    \newpage
+
+    \pagenumbering{arabic}
+    
+    \subfile{./sections/Introduction.tex}
+    \newpage
+    \subfile{./sections/Background_Information.tex}
+    \newpage
+    \subfile{./sections/Problem_Description.tex}
+        
+    \clearpage
+    \printbibliography[
+        title=References,
+        heading=bibintoc,
+    ]
+\end{document}    

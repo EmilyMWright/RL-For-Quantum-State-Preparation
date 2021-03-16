@@ -1,0 +1,142 @@
+% \NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{mthereport}
+
+% A style file to collect package imports and definitions of commands.
+
+%% Preamble:
+
+% To add pdf bookmarks to the report.
+\usepackage{bookmark}
+
+% Removes indents from paragraphs.
+\usepackage{parskip}
+
+
+
+% Adds filler text
+\usepackage{blindtext}
+
+% Set the margins of the report
+\usepackage[margin=1in]{geometry}
+
+% Adds ability to change itemize and enumitem environments.
+\usepackage{enumitem}
+
+% To set the left margin of bullet points to be flush with the left margin of
+% normal text
+\setlist[itemize]{
+  leftmargin=*
+}
+
+% To set the left margin of numbered items so that text to the right of it is
+% flush with normal text.
+\setlist[enumerate]{
+    leftmargin=0pt
+}
+
+% To typeset math
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+% To typeset units
+\usepackage{siunitx}
+
+% When using the '/' symbol in a '\SI' command, keep it as '/' and don't convert it to a fraction.
+\sisetup{per-mode=symbol}
+
+% To be able to add images
+\usepackage{graphicx}
+\usepackage{float}
+
+% Default floating options for figures and tables
+\makeatletter
+\renewcommand*{\fps@figure}{H}
+\renewcommand*{\fps@table}{H}
+\makeatother
+\floatplacement{subfigure}{H}
+
+% tableposition=top - Adds spacing around captions placed above tables
+\usepackage[tableposition=top]{caption}
+
+% Allow for captioning sub-figures.
+\usepackage{subcaption}
+
+% To set the default subcaption width.
+\captionsetup[subfigure]{width=0.95\textwidth}
+
+% To typeset the table for the TBL chart
+\usepackage{tabularx}
+
+% Adds longtable functionality to tabularx.
+\usepackage{ltablex}
+
+% To change the orientation of a page to landscape in a mainly portrait pdf document
+\usepackage{pdflscape}
+
+% ... Not quite sure what the two packages below do.
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+% Makes typesetting derivatives and integrals easier.
+\usepackage{physics}
+
+% To add references
+\usepackage{csquotes}
+\usepackage[
+    style=ieee,
+    backend=bibtex,
+    sorting=none,
+    doi=false,
+    isbn=false,
+    url=true,
+    urldate=long,
+]{biblatex}
+
+\addbibresource{bibliography.bib}
+
+% \DefineBibliographyStrings{english}{urlseen = {Last accessed:},}
+
+% To remove (). at the beginning of references with no date.
+\usepackage{xpatch}
+\xpatchbibdriver{online}
+  {\printtext[parens]{\usebibmacro{date}}}
+  {\iffieldundef{year}{}{\printtext[parens]{\usebibmacro{date}}}}
+  {}{}
+
+\DefineBibliographyStrings{english}{url = [Online]\adddot\addspace Available at,}
+\DeclareFieldFormat{urldate}{\bibstring{urlseen}\space#1}
+
+% Silences a warning about references wrapping.
+\usepackage[final]{microtype}
+
+%% LAST PACKAGES TO LOAD %%
+
+% To allow for a main .tex file to include content from other .tex files.
+\usepackage{subfiles}
+
+% To create hyperlinks.
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    allcolors=blue,
+    bookmarksopen=true
+}
+
+% Changing the title of the table of contents section.
+\addto\captionsenglish{\renewcommand*\contentsname{Table Of Contents}}
+
+% To auto center figures.
+\makeatletter
+\g@addto@macro\@floatboxreset\centering
+\makeatother
+
+% To add semantic meaning to texttt.
+\newcommand{\code}{\texttt}
+
+%To create a Gantt chart
+\usepackage{pgfgantt}
+
+%% End Preamble
+
+\endinput

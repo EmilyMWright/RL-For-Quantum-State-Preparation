@@ -1,0 +1,98 @@
+\documentclass[{../RL_for_QSP.tex}]{subfiles}
+
+\begin{document}
+    \section{Problem Description}
+    \label{sec:PD}
+
+% \subsection{Problem Statement}
+% The goal is to design and implement a reinforcement learning algorithm which will discover a sequence of discrete controls to bring one (or more) qubits from an initial state toward a desired state. The algorithm will maximize fidelity between the final state achieved by the control and the desired state. 
+
+\subsection{Model}
+The previous section has provided the background necessary to present the stochastic control problem we aim to solve using reinforcement learning. Consider the problem of preparing a quantum state $\ket{\psi_f}$ from an initial state $\ket{\psi_i}$ in a finite time $\tau$ in $n$ steps. We study the Hamiltonian introduced in Eqn. \ref{spinhaml} for spin in a magnetic field. At each time $t$, a constant magnetic field $h_t = (h_t^x,h_t^z)$ is applied for the time step $\Delta t = \frac{\tau}{n}$ and some dephasing noise $\eta_t$ drawn from a zero-mean Gaussian distribution is present. Together this yields the Hamiltonion in Eqn. \ref{modelhaml}.
+\begin{equation}\label{modelhaml}
+     H_t = \eta_t\sigma_z -h_t^x \sigma_x - h_t^z\sigma_z
+\end{equation}
+
+Overall, the state evolves according to the model in Eqn. \ref{model}.
+
+\begin{equation}\label{model}
+     \ket{\psi_{t+1}} = e^{-i H_t \Delta t}\ket{\psi_t}
+\end{equation}
+
+The set of states is given by 
+$$\mathbb{X} := \left\{ \ket{\psi} = \cos(\frac{\theta}{2})\ket{0} + e^{i\phi}\sin(\frac{\theta}{2})\ket{1} : 0 \leq \theta \leq \pi, 0 \leq \phi \leq 2 \pi \right\}$$ 
+which correspond to points on the Bloch sphere. In practice, there is a maximum and minumum possible magnetic field strength within which the control can be tuned so the set of controls can be simplified to
+$$\mathbb{U} := \{ h = (h^x,h^z) : h_i \in \{h_{min}, h_{min} + \Delta, h_{min} + 2\Delta, \hdots , h_{max}\}, \: i = x,z\}$$
+where $\Delta = (h_{max} - h_{min})/M$, so that each component of the control field can take $M + 1$ values including $h_{min}$ and $h_{max}$ for some $M \in \mathbb{Z}_{>0}$.
+
+The fidelity between the two states $\ket{\psi_0}$ and $\ket{\psi_1}$ is given by in Eqn. \ref{F}.
+\begin{equation}\label{F}
+     F(\psi_0, \psi_1) = |\braket{\psi_0}{\psi_1}|^2
+\end{equation}
+
+Consider the cost function in Eqn. \ref{cost}, which rewards fidelity between the current state $\ket{\psi_t}$ and the target state $\ket{\psi_f}$.
+\begin{equation}\label{cost}
+     c(\ket{\psi_t},h_t) = \begin{cases} 
+     100F(\psi_t, \psi_f)^3 & 0 \leq F(\psi_t, \psi_f) < 0.99 \\
+     5000 & 0.99 \leq F(\psi_t, \psi_f) \leq 1
+     \end{cases}
+\end{equation}
+
+Altogether, the model in Eqn. \ref{model}, the state space $\mathbb{X}$, the action space $\mathbb{U}$, and the cost function in Eqn. \ref{cost} constitue a Markov control problem.
+
+\subsection{Controllability}
+% Introduction to Quantum Control and Dynamics pp. 84
+% Topological properties of reachable sets and the control of quantum bits pp. 215
+
+Before proceeding with the algorithm design, we first verify the controllability of the system. In many situations, the Schrödinger equation introduced in Section \ref{sec:BI} takes the form of the system in Eqn. \ref{shrctrl}, where $H_0, \hdots, H_m$ are $n \times n$ Hermitian matrices.
+\begin{equation}\label{shrctrl}
+     i \hslash \frac{\partial \ket{\psi}}{\partial t} =  \left( H_0  + \sum_{i=1}^m H_i u_i(t) \right) \ket{\psi}
+\end{equation}
+
+Such a system is (pure state) controllable if for every pair of initial and final states, $\ket{\psi_i}$ and $\ket{\psi_f}$, there exist control functions $u_1(t), \hdots, u_m(t)$ and a time $\tau > 0$ such that the solution of Eqn. \ref{shrctrl} at time $\tau$, with initial condition $\ket{\psi_i}$, is $\ket{\psi(\tau)}$ = $\ket{\psi_f}$ \cite{d2007introduction}. 
+
+Eqn. \ref{shrctrl} can be transformed into the equivalent system given in Eqn. \ref{shrctrl2}.
+\begin{equation}\label{shrctrl2}
+     \frac{\partial \ket{\psi}}{\partial t} = A \ket{\psi} + \sum_{i=1}^m B_i \ket{\psi} u_i(t)
+\end{equation}
+
+Under the assumption that $u_1, \hdots, u_m$ are piecewsie continuous functions, there is an equivalent characterization of controllability. Namely, the system is controllable if the matrices $B_1, \hdots, B_m$ generate the Lie-algebra of $n \times n$ skew-Hermitian matrices with zero trace \cite{d2007introduction}. 
+
+For the specific Hamiltonian introduced in Eqn. \ref{modelhaml}, 
+
+$$A = -i \eta_t \sigma_z \text{ and } B_1 = i \sigma_x = \begin{pmatrix} 0 & i \\ i & 0\end{pmatrix} \text{ and } B_2 = i \sigma_z = \begin{pmatrix} i & 0 \\ 0 & -i\end{pmatrix}.$$
+
+Since $B_1$ and $B_2$ are skew-Hermitian with zero trace and linearly independent, they form a basis for the Lie-algebra of $2 \times 2$ skew-Hermitian matrices with zero trace (for details see \cite{aless2010topo}). As a result, the overall system in Eqn. \ref{model} is controllable.
+
+% \subsection{Formulation as a Markov Decision Process}
+% The Markov decision process underlying this problem is as follow:
+% % https://arxiv.org/pdf/1902.02157.pdf pp. 6
+% % https://arxiv.org/pdf/1705.00565.pdf pp. 3
+
+% \begin{itemize}
+%   \item a set of states, $\mathbb{X} := \{ (\theta, \phi) : 0 \leq \theta \leq \pi, 0 \leq \phi \leq 2 \pi \}$ which correspond to points on the Bloch sphere,
+%   \item a set of control actions, $\mathbb{U} := \{h : \mathbb{R} \to \{0,1\} \times \{0,1\}\}$,
+%   \item a transition kernel, $\mathcal{T} \in \mathcal{P}(\mathbb{X}|\mathbb{X}\times\mathbb{U})$, and
+%   \item an initial distribution, $\nu$. 
+% \end{itemize}
+
+% % a set of control actions, $\mathbb{U} := \{h_{min}, h_{min} + \Delta, h_{min} + 2\Delta, \hdots , h_{max}\}$ where $\Delta = (h_{max} - h_{min})/M$, so that the control field can take $M + 1$ values including $h_{min}$ and $h_{max}$ for some $M \in \mathbb{Z}_{>0}$
+
+% The fidelity between the current state $\ket{\psi}$ and the target state $\ket{\psi_f}$ is given by:
+% \begin{align*}
+%      F(\psi, \psi_f) &= |\braket{\psi}{\psi_f}|^2
+% \end{align*}
+  
+% The reward function is based on fidelity.
+
+% \begin{equation}
+%      r(x_t,u_t,x_{t+1}) = \begin{cases} 
+%      100F^3 & 0 \leq F < 0.99 \\
+%      5000 & 0.99 \leq F \leq 1
+%      \end{cases}
+% \end{equation}
+
+% An algorithm will be designed solve the Markov decision problem:
+% $$\max_{\gamma \in \Gamma}E^{\gamma} \left[ \sum_{t = 0}^T r(x_t, u_t, x_{t + 1}) \right].$$
+
+\end{document}

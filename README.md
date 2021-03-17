@@ -4,7 +4,7 @@ A central requirement in order to engineer functional quantum computers is the a
 
 The objective of my research is to design and implement a reinforcement learning algorithm which will discover a sequence of discrete controls to bring one qubit from an initial state toward a desired state. The algorithm will maximize fidelity between the final state achieved by the control and the desired state. The current iteration in the design process is a Q-learning algorithm on a quantized state space. Given an initial state and target state and a Hamiltonian with some noise, the algorithm successfully finds the optimal sequence of piecewise constant controls. For example, the evolution of the state from |0> to |1> is depicted below, where the states are represented as vectors on the Bloch sphere. 
 
- ![Success Picture](EvolutionWithNoise3.png) 
+ ![Success Picture](EvolutionWithTwoControlsAndNoise.png) 
 
  
 ### References
